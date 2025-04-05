@@ -27,9 +27,9 @@ else:
         http_auth=(username, password),  # Basic Authentication
         use_ssl=True,  # Set to True if using HTTPS
         verify_certs=False  # Set to True if you have valid SSL certs
-        # ,timeout=30,
-        # retry_on_timeout=True,
-        # max_retries=3
+        ,timeout=30,
+        retry_on_timeout=True,
+        max_retries=3
     )
 
     # Test the OpenSearch connection

@@ -4,6 +4,8 @@ from opensearchpy import OpenSearch
 import mariadb
 import os
 import urllib3
+from opensearchpy.connection import RequestsHttpConnection
+
 
 # Disable SSL warnings (use cautiously in production)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -11,7 +13,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ----------------------------
 # OpenAI Configuration
 # ----------------------------
-OPENAI_API_KEY = "sk-proj-..."  # Store securely in environment variables or secret managers
+OPENAI_API_KEY = "sk-proj-"  # Store securely in environment variables or secret managers
 openAI_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ----------------------------
@@ -25,15 +27,19 @@ client = OpenSearch(
     hosts=[OPENSEARCH_HOST],
     http_auth=OPENSEARCH_AUTH,
     use_ssl=True,
-    verify_certs=False  # Set to True with proper certs in production
+    verify_certs=False,  # Set to True with proper certs in production
+    connection_class=RequestsHttpConnection,
+    timeout=60,  # Set timeout to 30 seconds or longer
+    retries=10,  # Increase retries
+    max_retries=10  # Allow multiple retries
 )
 
 # Verify OpenSearch connection
-try:
-    response = client.info()
-    print("Connected to OpenSearch:", response)
-except Exception as e:
-    print("Error connecting to OpenSearch:", e)
+# try:
+#     response = client.info()
+#     print("Connected to OpenSearch:", response)
+# except Exception as e:
+#     print("Error connecting to OpenSearch:", e)
 
 # ----------------------------
 # Create OpenSearch k-NN Index
@@ -169,12 +175,27 @@ def delDocId(index, id):
 
 # Delete entire index
 def delIndex(indexName):
-    client.indices.delete(index=indexName)
+    if client.indices.exists(index=indexName):
+        client.indices.delete(index=indexName)
+        print(f"Index '{indexName}' deleted.")
+    else:
+        print(f"Index '{indexName}' not found. Nothing to delete.")
 
 # ----------------------------
 # Main execution
 # ----------------------------
 if __name__ == "__main__":
+    try:
+        response = client.info()
+        print("Connected to OpenSearch:", response)
+    except Exception as e:
+        print("Error connecting to OpenSearch:", e)
+
+    print("Removing Index")
+    delIndex(OPENSEARCH_INDEX)
+    print("Making Index")
     makeIndex(OPENSEARCH_INDEX)                # Create index if it doesn't exist
+    print("Storing Embeddings")
     store_embeddings_in_opensearch()           # Store all embeddings
+    print("Starting Chatbot")
     chatbot()                                  # Launch chatbot

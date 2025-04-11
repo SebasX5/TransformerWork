@@ -40,3 +40,6 @@ else:
     except Exception as e:
         print("Error connecting to OpenSearch:", e)
     print("ended")
+    health = client.cluster.health()
+    print(health)
+

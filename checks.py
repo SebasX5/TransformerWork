@@ -30,7 +30,7 @@ def OS_client():
 
     # Test the OpenSearch connection
     print("started")
-    # client.indices.delete(index='security-auditlog-*')
+    # client.indices.delete(index='top_queries-*')
     try:
         response = client.info()
         print("Connected to OpenSearch:", response)

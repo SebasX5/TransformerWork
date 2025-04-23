@@ -164,7 +164,6 @@ def store_embedding(doc_id, text, url):
 
 # Store multiple embeddings from database to OpenSearch
 def store_embeddings_in_opensearch():
-    # data = fetch_scraped_data()
     data = fetch_mock_data() if USE_MOCK_DATA else fetch_scraped_data()
     if not data:
         print("No data fetched from MariaDB.")
@@ -184,8 +183,7 @@ def store_embeddings_in_opensearch():
 
 
 # Store documents in OpenSearch with retry and error handling
-def bulk_store_embeddings_in_opensearch(batch_size=10, throttle_seconds=5):
-    # data = fetch_scraped_data_with_retry()
+def bulk_store_embeddings_in_opensearch(batch_size=25, throttle_seconds=5):
     data = fetch_mock_data() if USE_MOCK_DATA else fetch_scraped_data()
     if not data:
         logger.error("No data fetched from MariaDB.")
@@ -200,7 +198,13 @@ def bulk_store_embeddings_in_opensearch(batch_size=10, throttle_seconds=5):
         # Prepare documents for bulk indexinga
         for doc_id, url, text in batch:
             try:
-                embedding = generate_openai_embedding(text)
+                # Attempt to generate the embedding
+                try:
+                    embedding = generate_openai_embedding(text)
+                except Exception as e:
+                    logger.error(f"Embedding generation failed for doc {doc_id} with error: {e}")
+                    failed_docs.append(str(doc_id))
+                    continue  # Skip this document and move to the next
                 document = {
                     "_op_type": "index",
                     "_index": OPENSEARCH_INDEX,
@@ -213,7 +217,7 @@ def bulk_store_embeddings_in_opensearch(batch_size=10, throttle_seconds=5):
                 }
                 actions.append(document)
             except Exception as e:
-                logger.error(f"Embedding generation failed for doc {doc_id}: {e}")
+                logger.error(f"Unexpected error while processing doc {doc_id}: {e}")
                 failed_docs.append(str(doc_id))
                 continue
 
@@ -238,9 +242,9 @@ def bulk_store_embeddings_in_opensearch(batch_size=10, throttle_seconds=5):
 
         
         # Retry indexing for failed documents
-        if failed_docs:
-            logger.info(f"Retrying failed documents: {failed_docs}")
-            store_failed_documents(failed_docs)
+        # if failed_docs:
+        #     logger.info(f"Retrying failed documents: {failed_docs}")
+        #     store_failed_documents(failed_docs)
 
 # Helper: Chunking generator
 def batch_data(data, batch_size):
@@ -363,9 +367,9 @@ def store_failed_documents(failed_ids, max_retries=3, throttle_seconds=1):
             logger.warning(f"{len(remaining_failed_ids)} documents still failed. Retrying in {throttle_seconds}s...")
             time.sleep(throttle_seconds)
 
-    if remaining_failed_ids:
-        logger.error(f"Failed to re-index {len(remaining_failed_ids)} documents after {max_retries} retries.")
-        print("Final failed IDs:", remaining_failed_ids)
+    # if remaining_failed_ids:
+    #     logger.error(f"Failed to re-index {len(remaining_failed_ids)} documents after {max_retries} retries.")
+    #     print("Final failed IDs:", remaining_failed_ids)
 
 
 # Delete a single document by ID

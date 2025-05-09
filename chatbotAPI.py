@@ -6,6 +6,9 @@ import chromadb
 import mariadb
 import numpy as np
 
+# Final API 
+
+
 # === API Keys ===
 openai.api_key = ""
 
@@ -141,5 +144,7 @@ def root():
 #To run the API locally
 # 1. pip install fastapi uvicorn
 #2. uvicorn chat_api:app --reload --host 127.0.0.1 --port 8080
-# Then 
+
+
+#Future update: add Gunicorn to use more workers
 

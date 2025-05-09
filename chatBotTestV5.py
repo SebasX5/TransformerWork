@@ -6,7 +6,7 @@ from pprint import pprint
 
 # API Keys
 COHERE_API_KEY = "ekac8v5OlcEJ1TGGOFC30hzY73zwSqcQPfnv6hJN"
-OPENAI_API_KEY = ""  # Add key here
+OPENAI_API_KEY = ""
 openai.api_key = OPENAI_API_KEY
 
 # ChromaDB Setup (replaces OpenSearch)
